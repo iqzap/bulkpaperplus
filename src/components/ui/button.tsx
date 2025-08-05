@@ -23,7 +23,7 @@ const buttonVariants = cva(
         success: "bg-status-active text-white hover:bg-status-active/90",
         warning: "bg-status-pending text-white hover:bg-status-pending/90",
         danger: "bg-status-expired text-white hover:bg-status-expired/90",
-        tab: "bg-transparent border-b-2 border-transparent hover:border-primary/50 data-[state=active]:border-primary data-[state=active]:bg-primary/5",
+        tab: "bg-transparent border-b-2 border-transparent hover:border-primary/50 data-[state=active]:border-transparent data-[state=active]:bg-primary/5",
       },
       size: {
         default: "h-10 px-4 py-2",
