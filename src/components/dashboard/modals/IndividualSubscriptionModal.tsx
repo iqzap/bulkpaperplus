@@ -84,8 +84,8 @@ export const IndividualSubscriptionModal = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
-        <DialogHeader>
+      <DialogContent className="max-w-4xl h-[700px] overflow-hidden flex flex-col p-6">
+        <DialogHeader className="pb-4">
           <DialogTitle>Add Individual Subscriptions</DialogTitle>
         </DialogHeader>
         

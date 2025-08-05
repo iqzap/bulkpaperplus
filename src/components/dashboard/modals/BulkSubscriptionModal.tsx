@@ -58,8 +58,8 @@ export const BulkSubscriptionModal = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-2xl max-h-[80vh] overflow-hidden flex flex-col">
-        <DialogHeader>
+      <DialogContent className="max-w-2xl h-[600px] overflow-hidden flex flex-col p-6">
+        <DialogHeader className="pb-4">
           <DialogTitle>Add Manual Subscription</DialogTitle>
         </DialogHeader>
         
