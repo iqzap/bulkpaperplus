@@ -52,6 +52,26 @@ export default {
 					DEFAULT: 'hsl(var(--card))',
 					foreground: 'hsl(var(--card-foreground))'
 				},
+				// Dashboard specific colors
+				dashboard: {
+					bg: 'hsl(var(--dashboard-bg))',
+					header: 'hsl(var(--dashboard-header))',
+					sidebar: 'hsl(var(--dashboard-sidebar))',
+					'table-header': 'hsl(var(--table-header))',
+					'table-hover': 'hsl(var(--table-row-hover))'
+				},
+				status: {
+					active: 'hsl(var(--status-active))',
+					expired: 'hsl(var(--status-expired))',
+					pending: 'hsl(var(--status-pending))',
+					none: 'hsl(var(--status-none))'
+				},
+				tier: {
+					trial: 'hsl(var(--tier-trial))',
+					basic: 'hsl(var(--tier-basic))',
+					premium: 'hsl(var(--tier-premium))',
+					enterprise: 'hsl(var(--tier-enterprise))'
+				},
 				sidebar: {
 					DEFAULT: 'hsl(var(--sidebar-background))',
 					foreground: 'hsl(var(--sidebar-foreground))',

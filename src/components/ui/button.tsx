@@ -18,12 +18,19 @@ const buttonVariants = cva(
           "bg-secondary text-secondary-foreground hover:bg-secondary/80",
         ghost: "hover:bg-accent hover:text-accent-foreground",
         link: "text-primary underline-offset-4 hover:underline",
+        // Dashboard specific variants
+        dashboard: "bg-gradient-to-r from-primary to-primary/90 text-primary-foreground hover:from-primary/90 hover:to-primary/80 shadow-md",
+        success: "bg-status-active text-white hover:bg-status-active/90",
+        warning: "bg-status-pending text-white hover:bg-status-pending/90",
+        danger: "bg-status-expired text-white hover:bg-status-expired/90",
+        tab: "bg-transparent border-b-2 border-transparent hover:border-primary/50 data-[state=active]:border-primary data-[state=active]:bg-primary/5",
       },
       size: {
         default: "h-10 px-4 py-2",
         sm: "h-9 rounded-md px-3",
         lg: "h-11 rounded-md px-8",
         icon: "h-10 w-10",
+        tab: "h-12 px-6 rounded-none",
       },
     },
     defaultVariants: {
