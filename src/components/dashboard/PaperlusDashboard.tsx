@@ -24,12 +24,32 @@ export const PaperlusDashboard = () => {
 
   const { toast } = useToast();
 
-  // Helper function to add date to subscription
-  const addSubscriptionDates = (planId: string): { startDate: string; endDate: string } => {
+  // Helper function to generate unique subscription ID
+  const generateSubscriptionId = () => {
+    return `sub-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+  };
+
+  // Helper function to calculate stacked subscription dates
+  const calculateStackedDates = (userId: string, planId: string): { startDate: string; endDate: string | null } => {
     const plan = subscriptionPlans.find(p => p.id === planId);
-    const startDate = new Date().toISOString().split('T')[0];
+    const userActiveSubscriptions = userSubscriptions.filter(sub => 
+      sub.userId === userId && sub.status === 'active'
+    );
     
-    let endDate = new Date();
+    // Find the latest end date among active subscriptions
+    let startDate: Date;
+    if (userActiveSubscriptions.length === 0) {
+      startDate = new Date();
+    } else {
+      const latestEndDate = userActiveSubscriptions.reduce((latest, sub) => {
+        const endDate = sub.endDate ? new Date(sub.endDate) : new Date(2099, 11, 31);
+        return !latest || endDate > latest ? endDate : latest;
+      }, null as Date | null);
+      startDate = latestEndDate || new Date();
+    }
+    
+    // Calculate end date based on plan duration
+    let endDate: Date | null = new Date(startDate);
     switch (plan?.duration) {
       case '30 days':
         endDate.setDate(endDate.getDate() + 30);
@@ -44,13 +64,16 @@ export const PaperlusDashboard = () => {
         endDate.setFullYear(endDate.getFullYear() + 5);
         break;
       case 'Lifetime':
-        endDate.setFullYear(endDate.getFullYear() + 100); // Far future for lifetime
+        endDate = null; // Lifetime subscription
         break;
       default:
         endDate.setFullYear(endDate.getFullYear() + 1);
     }
     
-    return { startDate, endDate: endDate.toISOString().split('T')[0] };
+    return { 
+      startDate: startDate.toISOString().split('T')[0], 
+      endDate: endDate ? endDate.toISOString().split('T')[0] : null 
+    };
   };
 
   // Filter and search logic
@@ -60,7 +83,7 @@ export const PaperlusDashboard = () => {
     // Apply search filter
     if (searchTerm) {
       filtered = filtered.filter(user =>
-        user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        user.companyName.toLowerCase().includes(searchTerm.toLowerCase()) ||
         user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
         user.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
         user.phone.includes(searchTerm)
@@ -70,15 +93,15 @@ export const PaperlusDashboard = () => {
     // Apply status filter
     if (filter !== 'all') {
       filtered = filtered.filter(user => {
-        const subscription = userSubscriptions.find(sub => sub.userId === user.id);
+        const userSubs = userSubscriptions.filter(sub => sub.userId === user.id);
         
         switch (filter) {
           case 'active':
-            return subscription?.status === 'active';
+            return userSubs.some(sub => sub.status === 'active');
           case 'expired':
-            return subscription?.status === 'expired';
+            return userSubs.length > 0 && userSubs.every(sub => sub.status === 'expired');
           case 'none':
-            return !subscription;
+            return userSubs.length === 0;
           default:
             return true;
         }
@@ -90,17 +113,20 @@ export const PaperlusDashboard = () => {
 
   // Calculate counts for tabs
   const counts = useMemo(() => {
-    const active = users.filter(user => 
-      userSubscriptions.find(sub => sub.userId === user.id && sub.status === 'active')
-    ).length;
+    const active = users.filter(user => {
+      const userSubs = userSubscriptions.filter(sub => sub.userId === user.id);
+      return userSubs.some(sub => sub.status === 'active');
+    }).length;
     
-    const expired = users.filter(user => 
-      userSubscriptions.find(sub => sub.userId === user.id && sub.status === 'expired')
-    ).length;
+    const expired = users.filter(user => {
+      const userSubs = userSubscriptions.filter(sub => sub.userId === user.id);
+      return userSubs.length > 0 && userSubs.every(sub => sub.status === 'expired');
+    }).length;
     
-    const none = users.filter(user => 
-      !userSubscriptions.find(sub => sub.userId === user.id)
-    ).length;
+    const none = users.filter(user => {
+      const userSubs = userSubscriptions.filter(sub => sub.userId === user.id);
+      return userSubs.length === 0;
+    }).length;
 
     return { active, expired, none, all: users.length };
   }, [users, userSubscriptions]);
@@ -110,14 +136,14 @@ export const PaperlusDashboard = () => {
     const plan = subscriptionPlans.find(p => p.id === planId);
     if (!plan) return;
 
-    const { startDate, endDate } = addSubscriptionDates(planId);
+    const newSubscriptions: UserSubscription[] = [];
 
     selectedUserIds.forEach(userId => {
-      // Remove existing subscription if any
-      setUserSubscriptions(prev => prev.filter(sub => sub.userId !== userId));
+      const { startDate, endDate } = calculateStackedDates(userId, planId);
       
-      // Add new subscription
+      // Add new stacked subscription
       const newSubscription: UserSubscription = {
+        id: generateSubscriptionId(),
         userId,
         planId,
         planName: plan.name,
@@ -126,27 +152,29 @@ export const PaperlusDashboard = () => {
         endDate
       };
       
-      setUserSubscriptions(prev => [...prev, newSubscription]);
+      newSubscriptions.push(newSubscription);
     });
+    
+    setUserSubscriptions(prev => [...prev, ...newSubscriptions]);
 
     toast({
       title: "Bulk Subscription Added",
-      description: `Successfully added ${plan.name} to ${selectedUserIds.length} users.`,
+      description: `Successfully added ${plan.name} to ${selectedUserIds.length} users (stacked).`,
     });
   };
 
   const handleIndividualSubscriptions = (subscriptions: Array<{ userId: string; planId: string }>) => {
+    const newSubscriptions: UserSubscription[] = [];
+
     subscriptions.forEach(({ userId, planId }) => {
       const plan = subscriptionPlans.find(p => p.id === planId);
       if (!plan) return;
 
-      const { startDate, endDate } = addSubscriptionDates(planId);
-
-      // Remove existing subscription if any
-      setUserSubscriptions(prev => prev.filter(sub => sub.userId !== userId));
+      const { startDate, endDate } = calculateStackedDates(userId, planId);
       
-      // Add new subscription
+      // Add new stacked subscription
       const newSubscription: UserSubscription = {
+        id: generateSubscriptionId(),
         userId,
         planId,
         planName: plan.name,
@@ -155,12 +183,14 @@ export const PaperlusDashboard = () => {
         endDate
       };
       
-      setUserSubscriptions(prev => [...prev, newSubscription]);
+      newSubscriptions.push(newSubscription);
     });
+    
+    setUserSubscriptions(prev => [...prev, ...newSubscriptions]);
 
     toast({
       title: "Individual Subscriptions Added",
-      description: `Successfully added subscriptions to ${subscriptions.length} users.`,
+      description: `Successfully added subscriptions to ${subscriptions.length} users (stacked).`,
     });
   };
 
@@ -168,13 +198,11 @@ export const PaperlusDashboard = () => {
     const plan = subscriptionPlans.find(p => p.id === planId);
     if (!plan) return;
 
-    const { startDate, endDate } = addSubscriptionDates(planId);
-
-    // Remove existing subscription
-    setUserSubscriptions(prev => prev.filter(sub => sub.userId !== userId));
+    const { startDate, endDate } = calculateStackedDates(userId, planId);
     
-    // Add new subscription
+    // Add new stacked subscription
     const newSubscription: UserSubscription = {
+      id: generateSubscriptionId(),
       userId,
       planId,
       planName: plan.name,
@@ -186,8 +214,8 @@ export const PaperlusDashboard = () => {
     setUserSubscriptions(prev => [...prev, newSubscription]);
 
     toast({
-      title: "Subscription Updated",
-      description: `Successfully updated subscription to ${plan.name}.`,
+      title: "Subscription Added",
+      description: `Successfully added ${plan.name} subscription (stacked).`,
     });
   };
 
@@ -195,8 +223,8 @@ export const PaperlusDashboard = () => {
     setUserSubscriptions(prev => prev.filter(sub => sub.userId !== userId));
     
     toast({
-      title: "Subscription Deleted",
-      description: "Successfully removed user subscription.",
+      title: "All Subscriptions Deleted",
+      description: "Successfully removed all user subscriptions.",
       variant: "destructive",
     });
   };
@@ -208,7 +236,7 @@ export const PaperlusDashboard = () => {
 
   // Get data for edit modal
   const editingUser = editingUserId ? users.find(user => user.id === editingUserId) || null : null;
-  const editingSubscription = editingUserId ? userSubscriptions.find(sub => sub.userId === editingUserId) || null : null;
+  const editingUserSubscriptions = editingUserId ? userSubscriptions.filter(sub => sub.userId === editingUserId) : [];
 
   return (
     <div className="min-h-screen bg-dashboard-bg">
@@ -254,7 +282,7 @@ export const PaperlusDashboard = () => {
         isOpen={showEditModal}
         onClose={() => setShowEditModal(false)}
         user={editingUser}
-        currentSubscription={editingSubscription}
+        userSubscriptions={editingUserSubscriptions}
         subscriptionPlans={subscriptionPlans}
         onUpdateSubscription={handleUpdateSubscription}
         onDeleteSubscription={handleDeleteSubscription}

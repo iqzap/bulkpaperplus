@@ -36,7 +36,7 @@ export const FilterTabs = ({ activeFilter, onFilterChange, counts }: FilterTabsP
                 className="relative"
               >
                 {tab.label}
-                <span className="ml-2 bg-muted text-muted-foreground px-2 py-1 rounded-full text-xs">
+                <span className="ml-2 bg-white text-muted-foreground px-2 py-1 rounded-full text-xs">
                   {tab.count}
                 </span>
               </Button>

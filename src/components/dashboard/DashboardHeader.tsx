@@ -35,14 +35,14 @@ export const DashboardHeader = ({
         
         <div className="flex gap-3">
           <Button 
-            variant="dashboard" 
+            variant="outline" 
             onClick={onBulkSubscription}
-            className="whitespace-nowrap"
+            className="whitespace-nowrap bg-white border-gray-200"
           >
             + Bulk Subscription
           </Button>
           <Button 
-            variant="outline" 
+            variant="dashboard" 
             onClick={onAddIndividual}
             className="whitespace-nowrap"
           >

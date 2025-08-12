@@ -1,6 +1,6 @@
 export interface User {
   id: string;
-  name: string;
+  companyName: string;
   email: string;
   phone: string;
 }
@@ -14,6 +14,7 @@ export interface SubscriptionPlan {
 }
 
 export interface UserSubscription {
+  id: string;
   userId: string;
   planId: string;
   status: 'active' | 'expired' | 'pending';
